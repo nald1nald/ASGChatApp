@@ -15,24 +15,28 @@ import { v4 as uuid } from "uuid";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
 const Input = () => {
+  // Define state for text input and image
   const [text, setText] = useState("");
   const [img, setImg] = useState(null);
 
+  // Access the currentUser and data from the respective contexts
   const { currentUser } = useContext(AuthContext);
   const { data } = useContext(ChatContext);
 
   const handleSend = async () => {
     if (img) {
+      // Upload the image to Firebase Storage
       const storageRef = ref(storage, uuid());
-
       const uploadTask = uploadBytesResumable(storageRef, img);
 
       uploadTask.on(
         (error) => {
-          //TODO:Handle Error
+          // TODO: Handle Error
         },
         () => {
+          // Get the download URL of the uploaded image
           getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+            // Update the chats collection with the new message including the image
             await updateDoc(doc(db, "chats", data.chatId), {
               messages: arrayUnion({
                 id: uuid(),
@@ -46,6 +50,7 @@ const Input = () => {
         }
       );
     } else {
+      // Update the chats collection with the new message without an image
       await updateDoc(doc(db, "chats", data.chatId), {
         messages: arrayUnion({
           id: uuid(),
@@ -56,6 +61,7 @@ const Input = () => {
       });
     }
 
+    // Update the userChats collection with the last message and date for the current user
     await updateDoc(doc(db, "userChats", currentUser.uid), {
       [data.chatId + ".lastMessage"]: {
         text,
@@ -63,6 +69,7 @@ const Input = () => {
       [data.chatId + ".date"]: serverTimestamp(),
     });
 
+    // Update the userChats collection with the last message and date for the chat user
     await updateDoc(doc(db, "userChats", data.user.uid), {
       [data.chatId + ".lastMessage"]: {
         text,
@@ -70,9 +77,11 @@ const Input = () => {
       [data.chatId + ".date"]: serverTimestamp(),
     });
 
+    // Reset the text input and image states
     setText("");
     setImg(null);
   };
+
   return (
     <div className="input">
       <input

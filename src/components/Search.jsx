@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { AuthContext } from "../context/AuthContext";
+
 const Search = () => {
   const [username, setUsername] = useState("");
   const [user, setUser] = useState(null);
@@ -20,10 +21,8 @@ const Search = () => {
   const { currentUser } = useContext(AuthContext);
 
   const handleSearch = async () => {
-    const q = query(
-      collection(db, "users"),
-      where("displayName", "==", username)
-    );
+    // Create a query to search for the user based on their displayName
+    const q = query(collection(db, "users"), where("displayName", "==", username));
 
     try {
       const querySnapshot = await getDocs(q);
@@ -36,23 +35,22 @@ const Search = () => {
   };
 
   const handleKey = (e) => {
+    // Trigger the search when Enter key is pressed
     e.code === "Enter" && handleSearch();
   };
 
   const handleSelect = async () => {
-    //check whether the group(chats in firestore) exists, if not create
+    // Check whether the chat (chats in Firestore) exists, if not, create it
     const combinedId =
-      currentUser.uid > user.uid
-        ? currentUser.uid + user.uid
-        : user.uid + currentUser.uid;
+      currentUser.uid > user.uid ? currentUser.uid + user.uid : user.uid + currentUser.uid;
     try {
       const res = await getDoc(doc(db, "chats", combinedId));
 
       if (!res.exists()) {
-        //create a chat in chats collection
+        // Create a chat in the chats collection
         await setDoc(doc(db, "chats", combinedId), { messages: [] });
 
-        //create user chats
+        // Update user chats
         await updateDoc(doc(db, "userChats", currentUser.uid), {
           [combinedId + ".userInfo"]: {
             uid: user.uid,
@@ -74,8 +72,9 @@ const Search = () => {
     } catch (err) {}
 
     setUser(null);
-    setUsername("")
+    setUsername("");
   };
+
   return (
     <div className="search">
       <div className="searchForm">
